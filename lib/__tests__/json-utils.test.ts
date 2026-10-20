@@ -136,17 +136,16 @@ describe("toXML", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
+    expect(result.value).not.toContain("<a>");
     expect(result.value).toContain(
       [
-        "  <a>",
-        "    <aItem>",
-        "      <aItemItem>1</aItemItem>",
-        "      <aItemItem>2</aItemItem>",
-        "    </aItem>",
-        "    <aItem>",
-        "      <aItemItem>3</aItemItem>",
-        "    </aItem>",
-        "  </a>",
+        "  <aItem>",
+        "    <aItemItem>1</aItemItem>",
+        "    <aItemItem>2</aItemItem>",
+        "  </aItem>",
+        "  <aItem>",
+        "    <aItemItem>3</aItemItem>",
+        "  </aItem>",
       ].join("\n"),
     );
   });
@@ -156,16 +155,44 @@ describe("toXML", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
+    expect(result.value).not.toContain("<users>");
     expect(result.value).toContain(
       [
-        "  <users>",
-        "    <user>",
-        "      <id>1</id>",
-        "    </user>",
-        "    <user>",
-        "      <id>2</id>",
-        "    </user>",
-        "  </users>",
+        "  <user>",
+        "    <id>1</id>",
+        "  </user>",
+        "  <user>",
+        "    <id>2</id>",
+        "  </user>",
+      ].join("\n"),
+    );
+  });
+
+  it("writes array-of-values inside an object as items directly into parent", () => {
+    const result = toXML('{"tags":["x","y"]}');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).not.toContain("<tags>");
+    expect(result.value).toContain("  <tag>x</tag>\n  <tag>y</tag>");
+  });
+
+  it("wraps a top-level array of arrays, each sub-array in its own element", () => {
+    const result = toXML("[[1,2],[3]]");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toContain(
+      [
+        "<root>",
+        "  <rootItem>",
+        "    <rootItemItem>1</rootItemItem>",
+        "    <rootItemItem>2</rootItemItem>",
+        "  </rootItem>",
+        "  <rootItem>",
+        "    <rootItemItem>3</rootItemItem>",
+        "  </rootItem>",
+        "</root>",
       ].join("\n"),
     );
   });
