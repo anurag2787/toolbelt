@@ -580,7 +580,9 @@ export function toXML(raw: string, rootTag = "root"): Result<string> {
       const itemTag = sanitizeTag(
         tag.endsWith("s") && tag.length > 1 ? tag.slice(0, -1) : `${tag}Item`
       );
-      return node.map((item) => render(item, itemTag, indent)).join("\n");
+      if (node.length === 0) return `${pad}<${tag}/>`;
+      const inner = node.map((item) => render(item, itemTag, indent + 1)).join("\n");
+      return `${pad}<${tag}>\n${inner}\n${pad}</${tag}>`;
     }
     if (typeof node === "object") {
       const entries = Object.entries(node as Record<string, unknown>);

@@ -110,6 +110,67 @@ describe("lossless numbers", () => {
   });
 });
 
+describe("toXML", () => {
+  it("wraps a top-level array in a root element", () => {
+    const result = toXML("[1,2]");
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toContain(
+      "<root>\n  <rootItem>1</rootItem>\n  <rootItem>2</rootItem>\n</root>",
+    );
+  });
+
+  it("gives an empty element for an empty top-level array", () => {
+    const result = toXML("[]");
+    expect(result.ok && result.value).toContain("<root/>");
+  });
+
+  it("gives an empty element for an empty nested array", () => {
+    const result = toXML('{"a":[]}');
+    expect(result.ok && result.value).toContain("<a/>");
+  });
+
+  it("preserves structure for an array of arrays", () => {
+    const result = toXML('{"a":[[1,2],[3]]}');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toContain(
+      [
+        "  <a>",
+        "    <aItem>",
+        "      <aItemItem>1</aItemItem>",
+        "      <aItemItem>2</aItemItem>",
+        "    </aItem>",
+        "    <aItem>",
+        "      <aItemItem>3</aItemItem>",
+        "    </aItem>",
+        "  </a>",
+      ].join("\n"),
+    );
+  });
+
+  it("does not change output for objects with nested arrays of objects", () => {
+    const result = toXML('{"users":[{"id":1},{"id":2}]}');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toContain(
+      [
+        "  <users>",
+        "    <user>",
+        "      <id>1</id>",
+        "    </user>",
+        "    <user>",
+        "      <id>2</id>",
+        "    </user>",
+        "  </users>",
+      ].join("\n"),
+    );
+  });
+});
+
 describe("escapeForCode rust", () => {
   it("produces a raw string that does not close early on a leading-# value", () => {
     const out = escapeForCode('{"color":"#fff"}', "rust");
