@@ -579,7 +579,9 @@ function escapeXml(s: string): string {
     .replace(/"/g, "&quot;");
 }
 function sanitizeTag(s: string): string {
-  return /^[A-Za-z_][\w.-]*$/.test(s) ? s : "item";
+  if (!s) return "item";
+  const cleaned = s.replace(/[^A-Za-z0-9_.-]/g, "_");
+  return /^[0-9.-]/.test(cleaned) ? `_${cleaned}` : cleaned;
 }
 
 export function toXML(raw: string, rootTag = "root"): Result<string> {

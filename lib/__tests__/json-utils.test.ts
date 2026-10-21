@@ -196,6 +196,45 @@ describe("toXML", () => {
       ].join("\n"),
     );
   });
+
+  it("sanitizes keys according to XML tag rules", () => {
+    const input = JSON.stringify({
+      "bad key": 1,
+      "1x": 2,
+      "@type": "Person",
+      "$ref": "#/a",
+      "a:b": 3,
+      "-a": 4,
+      "first-name": "Ada",
+      "user.id": 42,
+      _id: "abc",
+      "": "empty",
+      café: "latte",
+    });
+    const result = toXML(input);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toContain("<bad_key>1</bad_key>");
+    expect(result.value).toContain("<_1x>2</_1x>");
+    expect(result.value).toContain("<_type>Person</_type>");
+    expect(result.value).toContain("<_ref>#/a</_ref>");
+    expect(result.value).toContain("<a_b>3</a_b>");
+    expect(result.value).toContain("<_-a>4</_-a>");
+    expect(result.value).toContain("<first-name>Ada</first-name>");
+    expect(result.value).toContain("<user.id>42</user.id>");
+    expect(result.value).toContain("<_id>abc</_id>");
+    expect(result.value).toContain("<item>empty</item>");
+    expect(result.value).toContain("<caf_>latte</caf_>");
+  });
+
+  it("sanitizes array element tag names derived from keys", () => {
+    const result = toXML('{"my tags":["a","b"]}');
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.value).toContain("  <my_tag>a</my_tag>\n  <my_tag>b</my_tag>");
+  });
 });
 
 describe("escapeForCode rust", () => {
