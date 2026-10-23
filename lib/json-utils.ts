@@ -363,14 +363,24 @@ function needsQuote(s: string): boolean {
   if (/^[+-]?\.(inf|nan)$/i.test(s)) return true;
   if (/^\d{4}-\d{1,2}-\d{1,2}(?:[Tt ].*)?$/.test(s)) return true;
   if (/[:#]\s|\s#/.test(s)) return true;
-  if (/[\n\t\r"]/.test(s)) return true;
+  if (/[\x00-\x1f\x7f-\x9f\u2028\u2029\ufffe\uffff"]/.test(s)) return true;
   return false;
 }
 
-
 function yamlString(s: string): string {
   if (!needsQuote(s)) return s;
-  const escaped = s.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n").replace(/\t/g, "\\t").replace(/\r/g, "\\r");
+  const escaped = s
+    .replace(/\\/g, "\\\\")
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, "\\n")
+    .replace(/\t/g, "\\t")
+    .replace(/\r/g, "\\r")
+    .replace(/[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f\u2028\u2029\ufffe\uffff]/g, (c) => {
+      const code = c.charCodeAt(0);
+      return code < 0x100
+        ? `\\x${code.toString(16).toUpperCase().padStart(2, "0")}`
+        : `\\u${code.toString(16).toUpperCase().padStart(4, "0")}`;
+    });
   return `"${escaped}"`;
 }
 

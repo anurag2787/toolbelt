@@ -427,6 +427,66 @@ describe("toYAML quotes strings YAML would read as other types", () => {
   );
 });
 
+describe("toYAML escapes control characters", () => {
+  it("escapes SOH and bell characters", () => {
+    const out = toYAML('{"soh":"\\u0001","bell":"a\\u0007b"}');
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.value).toContain('soh: "\\x01"');
+    expect(out.value).toContain('bell: "a\\x07b"');
+  });
+
+  it("escapes ANSI color codes", () => {
+    const out = toYAML('{"log":"\\u001b[31mred\\u001b[0m"}');
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.value).toBe('log: "\\x1B[31mred\\x1B[0m"\n');
+  });
+
+  it("escapes boundary control characters and non-printable unicode", () => {
+    const input = JSON.stringify({
+      nullChar: "\u0000",
+      del: "\u007F",
+      pad: "\u0080",
+      nel: "\u0085",
+      apc: "\u009F",
+      ls: "\u2028",
+      ps: "\u2029",
+      nonChar: "\uFFFE",
+    });
+    const out = toYAML(input);
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.value).toContain('nullChar: "\\x00"');
+    expect(out.value).toContain('del: "\\x7F"');
+    expect(out.value).toContain('pad: "\\x80"');
+    expect(out.value).toContain('nel: "\\x85"');
+    expect(out.value).toContain('apc: "\\x9F"');
+    expect(out.value).toContain('ls: "\\u2028"');
+    expect(out.value).toContain('ps: "\\u2029"');
+    expect(out.value).toContain('nonChar: "\\uFFFE"');
+  });
+
+  it("escapes control characters in keys", () => {
+    const out = toYAML('{"a\\u0001b":1}');
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.value).toBe('"a\\x01b": 1\n');
+  });
+
+  it("preserves standard whitespace escapes and normal strings", () => {
+    const out = toYAML('{"v":"x\\ty\\nz"}');
+    expect(out.ok).toBe(true);
+    if (!out.ok) return;
+    expect(out.value).toBe('v: "x\\ty\\nz"\n');
+
+    const normal = toYAML('{"v":"hello"}');
+    expect(normal.ok).toBe(true);
+    if (!normal.ok) return;
+    expect(normal.value).toBe("v: hello\n");
+  });
+});
+
 describe("toYAML empty array items", () => {
   it.each([
     ["[{}]", "- {}\n"],
