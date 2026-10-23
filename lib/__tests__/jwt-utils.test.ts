@@ -9,6 +9,7 @@ import {
   isStandardClaim,
   securityAudit,
   uint8ToBase64Url,
+  relativeTime,
   SAMPLE_JWT,
   type DecodedJwt,
   type JwksKey,
@@ -207,5 +208,35 @@ describe("securityAudit", () => {
       false
     );
     expect(findings.some((f) => f.level === "critical")).toBe(true);
+  });
+});
+
+describe("relativeTime", () => {
+  const nowMs = 1_000_000_000_000;
+  const nowSec = nowMs / 1000;
+
+  it("rolls up 59.6 seconds to 1 minute", () => {
+    expect(relativeTime(nowSec - 59.6, nowMs)).toBe("1 minute ago");
+    expect(relativeTime(nowSec + 59.6, nowMs)).toBe("in 1 minute");
+  });
+
+  it("rolls up 59.5 minutes to 1 hour", () => {
+    expect(relativeTime(nowSec - 3570, nowMs)).toBe("1 hour ago");
+    expect(relativeTime(nowSec + 3570, nowMs)).toBe("in 1 hour");
+  });
+
+  it("rolls up 23.6 hours to 1 day", () => {
+    expect(relativeTime(nowSec - 23.6 * 3600, nowMs)).toBe("1 day ago");
+    expect(relativeTime(nowSec + 23.6 * 3600, nowMs)).toBe("in 1 day");
+  });
+
+  it("rolls up 29.6 days to 1 month", () => {
+    expect(relativeTime(nowSec - 29.6 * 86400, nowMs)).toBe("1 month ago");
+    expect(relativeTime(nowSec + 29.6 * 86400, nowMs)).toBe("in 1 month");
+  });
+
+  it("rolls up 360 days to 1 year", () => {
+    expect(relativeTime(nowSec - 360 * 86400, nowMs)).toBe("1 year ago");
+    expect(relativeTime(nowSec + 360 * 86400, nowMs)).toBe("in 1 year");
   });
 });

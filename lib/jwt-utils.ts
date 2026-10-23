@@ -175,7 +175,23 @@ export function relativeTime(unixSeconds: number, nowMs = Date.now()): string {
       break;
     }
   }
-  const n = Math.round(abs / divisor);
+  let n = Math.round(abs / divisor);
+  if (unit === "second" && n >= 60) {
+    unit = "minute";
+    n = 1;
+  } else if (unit === "minute" && n >= 60) {
+    unit = "hour";
+    n = 1;
+  } else if (unit === "hour" && n >= 24) {
+    unit = "day";
+    n = 1;
+  } else if (unit === "day" && n >= 30) {
+    unit = "month";
+    n = 1;
+  } else if (unit === "month" && n >= 12) {
+    unit = "year";
+    n = 1;
+  }
   const label = n === 1 ? unit : `${unit}s`;
   return future ? `in ${n} ${label}` : `${n} ${label} ago`;
 }
