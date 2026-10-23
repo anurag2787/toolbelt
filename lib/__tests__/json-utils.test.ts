@@ -348,6 +348,12 @@ describe("escapeForCode python", () => {
 
     expect(out).toBe("'''{\"path\":\"C:\\\\\\\\temp\"}'''");
   });
+
+  it("escapes runs of single quotes", () => {
+    expect(escapeForCode('{"a":"\'\'\'\'\'"}', "python")).toBe("'''{\"a\":\"\\'\\'\\'\\'\\'\"}'''");
+    expect(escapeForCode('{"a":"\'\'\'\'\'\'\'\'"}', "python")).toBe("'''{\"a\":\"\\'\\'\\'\\'\\'\\'\\'\\'\"}'''");
+    expect(escapeForCode("it's'", "python")).toBe("'''it\\'s\\''''");
+  });
 });
 
 describe("parseJson5Compat indentation", () => {
