@@ -130,8 +130,9 @@ export function RegexTesterClient() {
           <div className="card overflow-hidden">
             <div className="border-b border-[var(--hairline)] bg-[var(--bg-raise)] px-3 py-2">
               <h2 className={headingClass}>
-                {found.matches.length} {found.matches.length === 1 ? "match" : "matches"}
-                {found.truncated && ", showing the first 1,000"}
+                {found.truncated
+                  ? "More than 1,000 matches, showing the first 1,000"
+                  : `${found.matches.length.toLocaleString("en-US")} ${found.matches.length === 1 ? "match" : "matches"}`}
               </h2>
             </div>
             <pre className="p-4 sm:p-5 whitespace-pre-wrap break-words font-mono text-[13px] leading-relaxed text-[var(--fg)]">
@@ -204,7 +205,7 @@ export function RegexTesterClient() {
             </div>
             <div className="flex items-center justify-between gap-3">
               <h2 className={headingClass}>Result</h2>
-              <CopyButton value={replaced} label="Copy" successMessage="Result copied" className="py-1" />
+              <CopyButton value={replaced} label="Copy" ariaLabel="Copy result" successMessage="Result copied" className="py-1" />
             </div>
             <pre className="whitespace-pre-wrap break-words rounded-xl border border-[var(--hairline)] bg-[var(--bg)] p-3 font-mono text-[13px] leading-relaxed text-[var(--fg)]">
               {replaced}
