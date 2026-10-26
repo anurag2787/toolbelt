@@ -89,14 +89,11 @@ describe("JsonFormatterClient", () => {
         expect(screen.getByText("Valid", { selector: ".badge-ok" })).toBeInTheDocument(),
       );
 
-      // Switch back to strict mode
       toggleJson5();
 
-      // Click the {a: 1,} history entry – strict mode cannot parse it
       const entry = await screen.findByTitle(/\{a: 1,\}/);
       fireEvent.click(entry);
 
-      // Output must be cleared and an error must be shown
       await waitFor(() => {
         expect(screen.getByText("Invalid JSON")).toBeInTheDocument();
         expect(screen.queryByText("Valid", { selector: ".badge-ok" })).not.toBeInTheDocument();
@@ -163,7 +160,6 @@ describe("JsonFormatterClient", () => {
     });
 
     it("shows an error and clears output when fetch returns duplicate keys rejected by format", async () => {
-      // First populate some output
       renderClient();
       typeInput('{"initial": 1}');
       clickFormat();
@@ -171,7 +167,6 @@ describe("JsonFormatterClient", () => {
         expect(screen.getByText("Valid", { selector: ".badge-ok" })).toBeInTheDocument(),
       );
 
-      // Duplicate keys pass JSON.parse but format rejects them
       const dupPayload = '{"a": 1, "a": 2}';
       vi.mocked(fetch).mockResolvedValue(
         new Response(dupPayload, { status: 200 }),
@@ -184,7 +179,6 @@ describe("JsonFormatterClient", () => {
       });
       fireEvent.click(screen.getByRole("button", { name: "Fetch" }));
 
-      // Dialog closes, input is set to fetched text, error banner is shown, Valid badge is gone
       await waitFor(() => {
         expect(inputEl().value).toBe(dupPayload);
         expect(screen.getByText("Invalid JSON")).toBeInTheDocument();
