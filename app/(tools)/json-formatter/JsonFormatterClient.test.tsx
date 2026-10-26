@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ToastProvider } from "@/components/shared/Toast";
 import { JsonFormatterClient } from "./JsonFormatterClient";
@@ -189,4 +189,74 @@ describe("JsonFormatterClient", () => {
       });
     });
   });
+
+  describe("Pulse timer cleanup & duration", () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("clears the pulse timer when unmounted right after a successful format", () => {
+      const { unmount } = render(<JsonFormatterClient />);
+      typeInput('{"key": "value"}');
+      clickFormat();
+
+      expect(vi.getTimerCount()).toBe(1);
+
+      unmount();
+
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it("shows the success pulse and removes it after 500 ms", () => {
+      render(<JsonFormatterClient />);
+      typeInput('{"key": "value"}');
+      clickFormat();
+
+      expect(document.querySelector(".animate-pulse-glow")).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(500);
+      });
+
+      expect(document.querySelector(".animate-pulse-glow")).not.toBeInTheDocument();
+    });
+
+    it("leaves no timers behind when loading sample JSON", () => {
+      render(<JsonFormatterClient />);
+      fireEvent.click(screen.getByRole("button", { name: "Load example" }));
+      expect(vi.getTimerCount()).toBe(0);
+      expect(inputEl().value).toContain('"name": "Ada Lovelace"');
+    });
+
+    it("resets the pulse timer when formatted again before the previous timer expires", () => {
+      render(<JsonFormatterClient />);
+      typeInput('{"a": 1}');
+      clickFormat();
+
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+
+      typeInput('{"a": 2}');
+      clickFormat();
+
+      expect(vi.getTimerCount()).toBe(1);
+
+      act(() => {
+        vi.advanceTimersByTime(300);
+      });
+      expect(document.querySelector(".animate-pulse-glow")).toBeInTheDocument();
+
+      act(() => {
+        vi.advanceTimersByTime(200);
+      });
+      expect(document.querySelector(".animate-pulse-glow")).not.toBeInTheDocument();
+      expect(vi.getTimerCount()).toBe(0);
+    });
+  });
 });
+

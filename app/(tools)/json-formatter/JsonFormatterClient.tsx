@@ -51,8 +51,17 @@ export function JsonFormatterClient() {
   const urlInputRef = useRef<HTMLInputElement>(null);
   const urlDialogRef = useRef<HTMLDivElement>(null);
   const fetchTriggerRef = useRef<HTMLButtonElement>(null);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { push } = useToast();
   const history = useHistory("json-formatter", 15);
+
+  useEffect(() => {
+    return () => {
+      if (pulseTimerRef.current) {
+        clearTimeout(pulseTimerRef.current);
+      }
+    };
+  }, []);
 
   const lineCount = input ? input.split("\n").length : 0;
 
@@ -67,8 +76,14 @@ export function JsonFormatterClient() {
       if (r.ok) {
         setOutput(r.value);
         setError(null);
+        if (pulseTimerRef.current) {
+          clearTimeout(pulseTimerRef.current);
+        }
         setSuccessPulse(true);
-        setTimeout(() => setSuccessPulse(false), 500);
+        pulseTimerRef.current = setTimeout(() => {
+          setSuccessPulse(false);
+          pulseTimerRef.current = null;
+        }, 500);
         if (!silent) {
           push("Formatted ✓", "success");
           history.push(text);
@@ -144,10 +159,8 @@ export function JsonFormatterClient() {
   const handleLoadSample = useCallback(() => {
     setInput(SAMPLE_JSON);
     setError(null);
-    setTimeout(() => {
-      const r = format(SAMPLE_JSON, indent);
-      if (r.ok) setOutput(r.value);
-    }, 0);
+    const r = format(SAMPLE_JSON, indent);
+    if (r.ok) setOutput(r.value);
   }, [indent]);
 
   const handleFetchUrl = useCallback(async () => {
