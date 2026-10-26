@@ -73,6 +73,9 @@ describe("JsonFormatterClient", () => {
 
       await waitFor(() => {
         expect(inputEl().value).toBe("{a: 1,}");
+        const outputEl = document.querySelector(".whitespace-pre");
+        expect(outputEl).toHaveTextContent('"a": 1');
+        expect(outputEl).not.toHaveTextContent('"b": 2');
         expect(screen.queryByText("Invalid JSON")).not.toBeInTheDocument();
         expect(screen.getByText("Valid", { selector: ".badge-ok" })).toBeInTheDocument();
       });

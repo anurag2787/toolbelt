@@ -57,9 +57,7 @@ export function JsonFormatterClient() {
   const lineCount = input ? input.split("\n").length : 0;
 
   const doFormat = useCallback(
-    (target?: string | boolean, silent = false) => {
-      const text = typeof target === "string" ? target : input;
-      const isSilent = typeof target === "boolean" ? target : silent;
+    (text = input, silent = false) => {
       if (!text.trim()) {
         setOutput("");
         setError(null);
@@ -71,7 +69,7 @@ export function JsonFormatterClient() {
         setError(null);
         setSuccessPulse(true);
         setTimeout(() => setSuccessPulse(false), 500);
-        if (!isSilent) {
+        if (!silent) {
           push("Formatted ✓", "success");
           history.push(text);
         }
@@ -79,7 +77,7 @@ export function JsonFormatterClient() {
         setOutput("");
         setError(r.error);
         setErrorShake((n) => n + 1);
-        if (!isSilent) push("Invalid JSON", "error");
+        if (!silent) push("Invalid JSON", "error");
       }
     },
     [input, indent, json5, push, history]
