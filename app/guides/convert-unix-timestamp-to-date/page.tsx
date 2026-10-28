@@ -105,11 +105,12 @@ export default function ConvertUnixTimestampToDateGuidePage() {
           </h1>
 
           <p className="mt-4 text-[16px] text-[var(--fg-muted)] leading-relaxed">
-            A Unix timestamp is an integer that counts the number of seconds elapsed since
-            1970-01-01 00:00:00 UTC — the Unix epoch. To convert it to a human-readable date,
-            multiply by 1000 (to get milliseconds), pass it to your language&apos;s date
-            constructor, and format the result. To go the other way, take the UTC milliseconds
-            of the date and divide by 1000.
+            A Unix timestamp is an integer that counts the number of seconds since
+            1970-01-01 00:00:00 UTC, not counting leap seconds — the Unix epoch. In JavaScript,
+            convert it to a human-readable date by multiplying by 1000 (to get milliseconds) and
+            passing it to <code className="font-mono text-[var(--fg)]">new Date()</code> (to go back,
+            divide the date&apos;s UTC milliseconds by 1000). In Python, pass the seconds directly
+            to <code className="font-mono text-[var(--fg)]">datetime.fromtimestamp(seconds, tz=timezone.utc)</code>.
           </p>
 
           {/* Interactive tool banner */}
@@ -262,7 +263,7 @@ int(dt2.timestamp())
                 <Link href="/timestamp-converter" className="text-[var(--green)] hover:underline">
                   Unix Timestamp Converter
                 </Link>{" "}
-                shows both the UTC date and local time side by side so you can compare them.
+                shows the UTC date above your local time so you can compare them.
               </p>
             </div>
           </section>
@@ -298,10 +299,30 @@ int(dt2.timestamp())
               <p>
                 Negative Unix timestamps represent moments before the epoch. For example,{" "}
                 <code className="font-mono text-[var(--fg)]">-86400</code> is one day before the epoch,
-                which is 1969-12-31 00:00:00 UTC. JavaScript&apos;s{" "}
-                <code className="font-mono text-[var(--fg)]">Date</code> and Python&apos;s{" "}
-                <code className="font-mono text-[var(--fg)]">datetime</code> both support negative values
-                correctly. The converter handles negative inputs the same way as positive ones.
+                which is 1969-12-31 00:00:00 UTC.
+              </p>
+              <p>
+                JavaScript&apos;s <code className="font-mono text-[var(--fg)]">new Date(negativeSeconds * 1000)</code>{" "}
+                handles negative values directly. In Python, however, calling{" "}
+                <code className="font-mono text-[var(--fg)]">datetime.fromtimestamp()</code> on negative values
+                may raise an <code className="font-mono text-[var(--fg)]">OverflowError</code> or{" "}
+                <code className="font-mono text-[var(--fg)]">OSError</code> depending on what the host platform&apos;s
+                underlying C library handles (often restricted to years in 1970 through 2038). To handle pre-1970
+                timestamps reliably everywhere in Python, add a <code className="font-mono text-[var(--fg)]">timedelta</code>{" "}
+                to the epoch:
+              </p>
+              <pre className="p-4 rounded-lg border border-[var(--hairline)] bg-[var(--bg-raise)] font-mono text-[12.5px] leading-[1.7] whitespace-pre-wrap break-all text-[var(--fg)]">{`from datetime import datetime, timezone, timedelta
+
+# Safely handle pre-1970 timestamps across all platforms
+epoch = datetime(1970, 1, 1, tzinfo=timezone.utc)
+dt = epoch + timedelta(seconds=-86400)
+# 1969-12-31 00:00:00+00:00`}</pre>
+              <p>
+                The{" "}
+                <Link href="/timestamp-converter" className="text-[var(--green)] hover:underline">
+                  Unix Timestamp Converter
+                </Link>{" "}
+                handles negative inputs seamlessly.
               </p>
             </div>
           </section>
@@ -317,21 +338,21 @@ int(dt2.timestamp())
             </h2>
             <div className="text-[14.5px] text-[var(--fg-muted)] leading-relaxed space-y-3">
               <p>
-                A signed 32-bit integer can hold values up to{" "}
+                A signed 32-bit integer tops out at{" "}
                 <code className="font-mono text-[var(--fg)]">2,147,483,647</code>. In Unix seconds,
                 that maximum value corresponds to{" "}
-                <strong className="text-[var(--fg)]">2038-01-19 03:14:07 UTC</strong>. After that
-                second, a 32-bit counter overflows and wraps to a large negative number, which
+                <strong className="text-[var(--fg)]">2038-01-19 03:14:07 UTC</strong>. One second
+                later, the 32-bit counter overflows and wraps to a large negative number, which
                 most systems interpret as a date in 1901.
               </p>
               <p>
-                Most modern software, including JavaScript and Python, stores timestamps as 64-bit
-                integers and is not affected. The risk remains in old C code, some embedded
-                firmware, and legacy database columns defined as{" "}
-                <code className="font-mono text-[var(--fg)]">INT</code> or{" "}
-                <code className="font-mono text-[var(--fg)]">INT(11)</code>. If you maintain such
-                systems, audit the column types and migrate to{" "}
-                <code className="font-mono text-[var(--fg)]">BIGINT</code> or a native timestamp type.
+                Neither JavaScript nor Python is affected: a JavaScript <code className="font-mono text-[var(--fg)]">Date</code>{" "}
+                is backed by a 64-bit float of milliseconds (good for ±8.64e15 ms, reaching the year 275,760),
+                and Python&apos;s integers have arbitrary precision with no fixed size. The risk remains in legacy
+                32-bit C software, embedded firmware, and database columns. Note that in MySQL, the native{" "}
+                <code className="font-mono text-[var(--fg)]">TIMESTAMP</code> type also tops out at 2038-01-19 03:14:07 UTC;
+                affected columns should migrate to <code className="font-mono text-[var(--fg)]">BIGINT</code> or{" "}
+                <code className="font-mono text-[var(--fg)]">DATETIME</code> (which goes up to the year 9999).
               </p>
             </div>
           </section>

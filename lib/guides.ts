@@ -979,7 +979,7 @@ export const GUIDES: Guide[] = [
       },
       {
         name: "Check the year 2038 limit for 32-bit systems",
-        text: "A signed 32-bit integer overflows at 2,147,483,647 seconds, which corresponds to 2038-01-19 03:14:07 UTC. Modern 64-bit languages are not affected, but older embedded systems and database columns typed as INT(11) may be.",
+        text: "A signed 32-bit integer tops out at 2,147,483,647 seconds, which corresponds to 2038-01-19 03:14:07 UTC. Modern environments are not affected (JavaScript Date uses a 64-bit float and Python integers have no fixed size), but older embedded systems and 32-bit database columns like MySQL INT or TIMESTAMP may be.",
         url: "#step-5",
       },
     ],
@@ -990,15 +990,15 @@ export const GUIDES: Guide[] = [
       },
       {
         q: "What does a negative Unix timestamp mean?",
-        a: "A negative timestamp represents a moment before 1970-01-01 00:00:00 UTC. For example, -86400 is 1969-12-31 00:00:00 UTC, exactly one day before the Unix epoch. JavaScript's Date and Python's datetime both handle negative values correctly.",
+        a: "A negative timestamp represents a moment before 1970-01-01 00:00:00 UTC. For example, -86400 is 1969-12-31 00:00:00 UTC, exactly one day before the Unix epoch. JavaScript's Date handles negative milliseconds directly. In Python, fromtimestamp() may raise OverflowError or OSError depending on platform C library limits, so datetime(1970, 1, 1, tzinfo=timezone.utc) + timedelta(seconds=...) is safer and works everywhere.",
       },
       {
         q: "What is the year 2038 problem?",
-        a: "A signed 32-bit integer can hold a maximum value of 2,147,483,647, which corresponds to 2038-01-19 03:14:07 UTC. After that second, an overflowing 32-bit counter wraps to a large negative number and represents a date in 1901. Most modern software uses 64-bit integers and is not affected, but old C code, embedded firmware, and some database column types may still be vulnerable.",
+        a: "A signed 32-bit integer tops out at 2,147,483,647, which corresponds to 2038-01-19 03:14:07 UTC. After that second, the counter overflows and wraps to a negative number representing 1901. Modern environments are safe: JavaScript's Date is a 64-bit float (good to year 275760) and Python ints have arbitrary precision. Vulnerabilities remain in 32-bit C binaries, legacy embedded hardware, and database columns like MySQL INT or TIMESTAMP (migrate to BIGINT or DATETIME).",
       },
       {
         q: "What is ISO 8601 and how does it relate to Unix timestamps?",
-        a: "ISO 8601 is an international standard for date and time strings, for example 2026-10-28T14:30:00Z. The trailing Z means UTC. You convert a Unix timestamp to ISO 8601 with new Date(seconds * 1000).toISOString() in JavaScript or datetime.utcfromtimestamp(seconds).isoformat() + 'Z' in Python. The converter copies the ISO 8601 string directly from its output panel.",
+        a: "ISO 8601 is an international standard for date and time strings, for example 2026-10-28T14:30:00Z. The trailing Z means UTC. You convert a Unix timestamp to ISO 8601 with new Date(seconds * 1000).toISOString() in JavaScript or datetime.fromtimestamp(seconds, tz=timezone.utc).isoformat() in Python (which outputs a +00:00 offset). The converter copies the ISO 8601 string directly from its output panel.",
       },
       {
         q: "Why does the converter show a different time from what I expected?",
