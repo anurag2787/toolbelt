@@ -106,7 +106,7 @@ export default function ConvertUnixTimestampToDateGuidePage() {
 
           <p className="mt-4 text-[16px] text-[var(--fg-muted)] leading-relaxed">
             A Unix timestamp is an integer that counts the number of seconds since
-            1970-01-01 00:00:00 UTC, not counting leap seconds — the Unix epoch. In JavaScript,
+            1970-01-01 00:00:00 UTC (the Unix epoch), not counting leap seconds. In JavaScript,
             convert it to a human-readable date by multiplying by 1000 (to get milliseconds) and
             passing it to <code className="font-mono text-[var(--fg)]">new Date()</code> (to go back,
             divide the date&apos;s UTC milliseconds by 1000). In Python, pass the seconds directly
