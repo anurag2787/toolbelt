@@ -937,6 +937,77 @@ export const GUIDES: Guide[] = [
     relatedTools: ["csv-formatter"],
     sitemapPriority: 0.8,
   },
+  {
+    slug: "convert-unix-timestamp-to-date",
+    path: "/guides/convert-unix-timestamp-to-date",
+    title: "How to Convert a Unix Timestamp to a Date and Back",
+    tagline: "Timestamps Guide",
+    cardDescription:
+      "A Unix timestamp counts seconds (or milliseconds) since 1970-01-01 UTC. Learn to convert one to a readable date, convert a date back to epoch time, spot the unit from the digit count, and avoid the year 2038 limit.",
+    tags: ["Unix timestamp", "Epoch", "ISO 8601", "JavaScript", "Python"],
+    accentVar: "--green",
+    accentHex: "#3FDD6B",
+    metaTitle: "How to Convert a Unix Timestamp to a Date and Back",
+    metaDescription:
+      "Convert a Unix timestamp to a date in JavaScript and Python, tell seconds from milliseconds by digit count, understand ISO 8601, and learn the year 2038 limit.",
+    ogTitle: "How to Convert a Unix Timestamp to a Date and Back - CODERCOPS Guides",
+    ogDescription:
+      "Seconds vs milliseconds, UTC vs local time, ISO 8601, timestamps before 1970, the year 2038 problem, and short examples in JavaScript and Python.",
+    publishedAt: "2026-10-28",
+    readingTime: "8 min read",
+    totalTime: "PT8M",
+    steps: [
+      {
+        name: "Identify the unit from the digit count",
+        text: "A 10-digit value is almost certainly seconds. A 13-digit value is milliseconds. The Unix Timestamp Converter detects this automatically, or you can override it with the unit selector.",
+        url: "#step-1",
+      },
+      {
+        name: "Paste the epoch value and read the date",
+        text: "In the Unix Timestamp Converter, paste the number into the epoch input. The tool shows the UTC date, local time, ISO 8601 string, and a relative description such as \"3 days ago\".",
+        url: "#step-2",
+      },
+      {
+        name: "Convert a date string to epoch time",
+        text: "Type or paste an ISO 8601 date such as 2026-10-28T00:00:00Z into the date input. The converter shows the Unix seconds and milliseconds for that moment. Include a timezone offset such as Z or +05:30 for unambiguous results.",
+        url: "#step-3",
+      },
+      {
+        name: "Verify against UTC, not local time",
+        text: "A Unix timestamp always measures elapsed time from 1970-01-01 00:00:00 UTC. When displaying it, explicitly pass a timezone to avoid the output shifting based on the machine running the code.",
+        url: "#step-4",
+      },
+      {
+        name: "Check the year 2038 limit for 32-bit systems",
+        text: "A signed 32-bit integer overflows at 2,147,483,647 seconds, which corresponds to 2038-01-19 03:14:07 UTC. Modern 64-bit languages are not affected, but older embedded systems and database columns typed as INT(11) may be.",
+        url: "#step-5",
+      },
+    ],
+    faqs: [
+      {
+        q: "How do I tell seconds from milliseconds?",
+        a: "Count the digits of the absolute value. A 10-digit timestamp (up to about 9,999,999,999) is seconds and covers dates up to 2286. A 13-digit value is milliseconds. The Unix Timestamp Converter auto-detects the unit from the magnitude and shows which one it used.",
+      },
+      {
+        q: "What does a negative Unix timestamp mean?",
+        a: "A negative timestamp represents a moment before 1970-01-01 00:00:00 UTC. For example, -86400 is 1969-12-31 00:00:00 UTC, exactly one day before the Unix epoch. JavaScript's Date and Python's datetime both handle negative values correctly.",
+      },
+      {
+        q: "What is the year 2038 problem?",
+        a: "A signed 32-bit integer can hold a maximum value of 2,147,483,647, which corresponds to 2038-01-19 03:14:07 UTC. After that second, an overflowing 32-bit counter wraps to a large negative number and represents a date in 1901. Most modern software uses 64-bit integers and is not affected, but old C code, embedded firmware, and some database column types may still be vulnerable.",
+      },
+      {
+        q: "What is ISO 8601 and how does it relate to Unix timestamps?",
+        a: "ISO 8601 is an international standard for date and time strings, for example 2026-10-28T14:30:00Z. The trailing Z means UTC. You convert a Unix timestamp to ISO 8601 with new Date(seconds * 1000).toISOString() in JavaScript or datetime.utcfromtimestamp(seconds).isoformat() + 'Z' in Python. The converter copies the ISO 8601 string directly from its output panel.",
+      },
+      {
+        q: "Why does the converter show a different time from what I expected?",
+        a: "The most common reason is a unit mismatch: a millisecond value interpreted as seconds gives a date far in the future, and a second value interpreted as milliseconds gives a date in early 1970. The second most common reason is a local time offset: the UTC output is always correct, but the local time panel depends on the timezone of the device viewing the page.",
+      },
+    ],
+    relatedTools: ["timestamp-converter"],
+    sitemapPriority: 0.8,
+  },
 ];
 
 export function getGuide(slug: string): Guide | undefined {
