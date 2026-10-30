@@ -7,8 +7,6 @@ import {
   INSPECTION_LIMIT,
 } from "../unicode-inspector";
 
-// ─── utf8ByteCount ────────────────────────────────────────────────────────────
-
 describe("utf8ByteCount", () => {
   it("counts 1 byte per ASCII character", () => {
     expect(utf8ByteCount("abc")).toBe(3);
@@ -27,12 +25,10 @@ describe("utf8ByteCount", () => {
   });
 
   it("counts an unpaired surrogate as 3 bytes (U+FFFD replacement)", () => {
-    const lone = String.fromCharCode(0xd800); // unpaired high surrogate
+    const lone = String.fromCharCode(0xd800);
     expect(utf8ByteCount(lone)).toBe(3);
   });
 });
-
-// ─── codePointCount ───────────────────────────────────────────────────────────
 
 describe("codePointCount", () => {
   it("returns 3 for 'abc'", () => {
@@ -40,7 +36,7 @@ describe("codePointCount", () => {
   });
 
   it("counts a surrogate pair as one code point", () => {
-    expect(codePointCount("😀")).toBe(1); // two UTF-16 units, one code point
+    expect(codePointCount("😀")).toBe(1);
   });
 
   it("counts an unpaired surrogate as one code point", () => {
@@ -52,8 +48,6 @@ describe("codePointCount", () => {
     expect(codePointCount("A😀B")).toBe(3);
   });
 });
-
-// ─── inspectUnicode — basic rows ──────────────────────────────────────────────
 
 describe("inspectUnicode", () => {
   it("produces one row per ASCII character", () => {
@@ -88,11 +82,10 @@ describe("inspectUnicode", () => {
   });
 
   it("keeps combining marks as separate rows", () => {
-    // e + combining acute = two code points, not one
     const { rows } = inspectUnicode("e\u0301");
     expect(rows).toHaveLength(2);
-    expect(rows[0].codePoint).toBe(0x65); // 'e'
-    expect(rows[1].codePoint).toBe(0x0301); // combining acute
+    expect(rows[0].codePoint).toBe(0x65);
+    expect(rows[1].codePoint).toBe(0x0301);
   });
 
   it("splits CRLF into two separate rows", () => {
@@ -108,7 +101,7 @@ describe("inspectUnicode", () => {
     expect(rows).toHaveLength(1);
     expect(rows[0].unpairedSurrogate).toBe(true);
     expect(rows[0].char).toBe("");
-    expect(rows[0].utf8Hex).toEqual(["EF", "BF", "BD"]); // U+FFFD
+    expect(rows[0].utf8Hex).toEqual(["EF", "BF", "BD"]);
   });
 
   it("labels an unpaired low surrogate as unpairedSurrogate", () => {
@@ -148,18 +141,17 @@ describe("inspectUnicode", () => {
   });
 
   it("reports correct UTF-16 offsets", () => {
-    // 'A' (BMP) + emoji (2 units) + 'B' (BMP)
     const { rows } = inspectUnicode("A😀B");
     expect(rows[0].utf16Offset).toBe(0);
-    expect(rows[1].utf16Offset).toBe(1); // emoji at index 1
-    expect(rows[2].utf16Offset).toBe(3); // 'B' at index 3
+    expect(rows[1].utf16Offset).toBe(1);
+    expect(rows[2].utf16Offset).toBe(3);
   });
 
   it("reports utf16Count = input.length and correct codePointCount", () => {
     const input = "A😀B";
     const { utf16Count, codePointCount: cpCount } = inspectUnicode(input);
-    expect(utf16Count).toBe(input.length); // 4
-    expect(cpCount).toBe(3); // A, 😀, B
+    expect(utf16Count).toBe(input.length);
+    expect(cpCount).toBe(3);
   });
 
   it("truncates at INSPECTION_LIMIT and sets truncated=true", () => {
@@ -185,8 +177,6 @@ describe("inspectUnicode", () => {
   });
 });
 
-// ─── getNormalization ─────────────────────────────────────────────────────────
-
 describe("getNormalization", () => {
   it("reports no change for plain ASCII", () => {
     const result = getNormalization("hello");
@@ -197,15 +187,14 @@ describe("getNormalization", () => {
   });
 
   it("shows NFC composes e + combining acute into U+00E9", () => {
-    // NFD input: 'e' + U+0301
     const input = "e\u0301";
     const result = getNormalization(input);
     expect(result.nfcChanged).toBe(true);
-    expect(result.nfc).toBe("\u00e9"); // precomposed é
+    expect(result.nfc).toBe("\u00e9");
   });
 
   it("shows NFD decomposes U+00E9 into e + U+0301", () => {
-    const input = "\u00e9"; // precomposed é
+    const input = "\u00e9";
     const result = getNormalization(input);
     expect(result.nfdChanged).toBe(true);
     expect(result.nfd).toBe("e\u0301");
