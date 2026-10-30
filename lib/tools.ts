@@ -779,15 +779,15 @@ export const TOOLS: Tool[] = [
     accentHex: "#E879F9",
     metaTitle: "Unicode & Invisible Character Inspector",
     metaDescription:
-      "Inspect any string as Unicode code points. See UTF-16 offsets, UTF-8 bytes, invisible characters, and NFC/NFD normalization — all in your browser.",
+      "Inspect any string as Unicode code points. See UTF-16 offsets, UTF-8 bytes, invisible characters, and NFC/NFD normalization, all in your browser.",
     ogTitle: "Unicode & Invisible Character Inspector - CODERCOPS Tools",
     ogDescription:
-      "Break text into code points, expose invisible characters, and preview NFC/NFD normalization — all client-side.",
+      "Break text into code points, expose invisible characters, and preview NFC/NFD normalization client-side.",
     heroBreadcrumb: "Code points · Invisible chars · Normalization",
     heroHeading: "Unicode & Invisible Character Inspector",
     heroDim: "&",
     heroDescription:
-      "Paste text to see every Unicode code point, expose invisible characters, and preview NFC/NFD normalization — all in your browser, nothing is uploaded.",
+      "Paste text to see every Unicode code point, expose invisible characters, and preview NFC/NFD normalization. Everything runs in your browser with zero uploads.",
     jsonLdName: "Unicode & Invisible Character Inspector",
     jsonLdDescription:
       "A browser-based tool to inspect text as Unicode code points, expose invisible and control characters, and preview NFC/NFD normalization.",
@@ -795,11 +795,11 @@ export const TOOLS: Tool[] = [
     faqs: [
       {
         q: "What are invisible characters and why do they matter?",
-        a: "Invisible characters are Unicode code points that have no visible glyph — zero-width spaces, joiners, non-breaking spaces, and bidirectional controls. They can cause string-comparison failures, unexpected rendering, and security issues (homograph attacks via bidi overrides). This tool makes them visible.",
+        a: "Invisible characters are Unicode code points that have no visible glyph, including zero-width spaces, joiners, non-breaking spaces, and bidirectional controls. They can cause string-comparison failures, unexpected rendering, and security issues, like a right-to-left override that makes text display in a different order than it's stored. This tool makes them visible.",
       },
       {
         q: "What is the difference between NFC and NFD normalization?",
-        a: "NFC (Canonical Decomposition, followed by Canonical Composition) composes characters into their precomposed forms — for example, e + combining accent becomes a single é. NFD decomposes them into base character + combining mark. Two strings that look identical can compare as unequal if one is NFC and the other is NFD.",
+        a: "NFC (Canonical Decomposition, followed by Canonical Composition) composes characters into their precomposed forms (for example, e + combining accent becomes a single é). NFD decomposes them into base character + combining mark. Two strings that look identical can compare as unequal if one is NFC and the other is NFD.",
       },
       {
         q: "Why do some invisible characters show as intentional?",

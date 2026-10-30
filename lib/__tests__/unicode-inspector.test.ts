@@ -91,6 +91,14 @@ describe("inspectUnicode", () => {
       invisibleLabel: "NO-BREAK SPACE",
       intentional: true,
     });
+    expect(inspectUnicode("\u2002").rows[0].invisibleLabel).toBe("EN SPACE");
+    expect(inspectUnicode("\u2009").rows[0].invisibleLabel).toBe("THIN SPACE");
+    expect(inspectUnicode("\u200a").rows[0].invisibleLabel).toBe("HAIR SPACE");
+    expect(inspectUnicode("\u202f").rows[0]).toMatchObject({
+      invisibleLabel: "NARROW NO-BREAK SPACE",
+      intentional: true,
+    });
+    expect(inspectUnicode("\u205f").rows[0].invisibleLabel).toBe("MEDIUM MATHEMATICAL SPACE");
     expect(inspectUnicode("\u200b").rows[0]).toMatchObject({
       invisibleLabel: "ZERO WIDTH SPACE",
       intentional: false,
@@ -100,6 +108,13 @@ describe("inspectUnicode", () => {
       intentional: true,
     });
     expect(inspectUnicode("\ufeff").rows[0].invisibleLabel).toBe("BYTE ORDER MARK (BOM)");
+  });
+
+  it("falls back to category labels for unlisted Zs or Cf characters", () => {
+    expect(inspectUnicode("\u0600").rows[0]).toMatchObject({
+      invisibleLabel: "FORMAT CHARACTER",
+      intentional: true,
+    });
   });
 
   it("reports correct UTF-16 offsets and counts for mixed characters", () => {

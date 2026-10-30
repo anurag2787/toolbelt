@@ -22,8 +22,8 @@ function CharCell({ row }: { row: CodePointRow }) {
   if (row.unpairedSurrogate) {
     return (
       <span
-        className="inline-flex items-center justify-center rounded px-1.5 py-0.5 font-mono text-[11px] text-[var(--rose)] border border-[var(--rose)] border-opacity-40 bg-tint-rose-5"
-        title="Unpaired UTF-16 surrogate — encoded as U+FFFD in UTF-8"
+        className="inline-flex items-center justify-center rounded px-1.5 py-0.5 font-mono text-[11px] text-[var(--rose)] border border-tint-rose-40 bg-tint-rose-5"
+        title="Unpaired UTF-16 surrogate (encoded as U+FFFD in UTF-8)"
       >
         ⚠ surrogate
       </span>
@@ -35,8 +35,8 @@ function CharCell({ row }: { row: CodePointRow }) {
         className={cn(
           "inline-flex items-center justify-center rounded px-1.5 py-0.5 font-mono text-[11px] border",
           row.intentional
-            ? "text-[var(--sky)] border-[var(--sky)] border-opacity-30 bg-tint-sky-5"
-            : "text-[var(--amber)] border-[var(--amber)] border-opacity-30 bg-tint-amber-5"
+            ? "text-[var(--sky)] border border-tint-sky-30 bg-tint-sky-5"
+            : "text-[var(--amber)] border border-tint-amber-30 bg-tint-amber-5"
         )}
         title={row.intentional ? "Intentional invisible character" : "Invisible character"}
       >
@@ -65,7 +65,7 @@ function NormalizationPanel({ input }: { input: string }) {
             <span className="flex items-center gap-2 text-sm font-medium text-[var(--fg)]">
               NFC
               {norm.nfcChanged ? (
-                <span className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-tint-fuchsia-5 text-[var(--fuchsia)] border border-[var(--fuchsia)] border-opacity-30">
+                <span className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-tint-fuchsia-5 text-[var(--fuchsia)] border border-tint-fuchsia-30">
                   changes input
                 </span>
               ) : (
@@ -95,7 +95,7 @@ function NormalizationPanel({ input }: { input: string }) {
             <span className="flex items-center gap-2 text-sm font-medium text-[var(--fg)]">
               NFD
               {norm.nfdChanged ? (
-                <span className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-tint-fuchsia-5 text-[var(--fuchsia)] border border-[var(--fuchsia)] border-opacity-30">
+                <span className="rounded px-1.5 py-0.5 text-[10px] font-mono bg-tint-fuchsia-5 text-[var(--fuchsia)] border border-tint-fuchsia-30">
                   changes input
                 </span>
               ) : (
@@ -154,6 +154,13 @@ export function UnicodeInspectorClient() {
             id="unicode-input"
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
+            onPaste={(e) => {
+              const text = e.clipboardData.getData("text/plain");
+              if (!text.includes("\r")) return;
+              e.preventDefault();
+              const el = e.currentTarget;
+              setRaw(el.value.slice(0, el.selectionStart) + text + el.value.slice(el.selectionEnd));
+            }}
             rows={5}
             spellCheck={false}
             autoCapitalize="off"
@@ -204,25 +211,34 @@ export function UnicodeInspectorClient() {
           role="alert"
           className="rounded-xl border border-tint-rose-30 bg-tint-rose-5 p-3 text-sm text-[var(--rose)]"
         >
-          ⚠ This string contains unpaired UTF-16 surrogates. They cannot be encoded as valid UTF-8
-          — each surrogate is replaced with{" "}
+          ⚠ This string contains unpaired UTF-16 surrogates. They cannot be encoded as valid UTF-8. Each surrogate is replaced with{" "}
           <code className="font-mono">U+FFFD</code> (the replacement character) when converting to UTF-8.
         </p>
       )}
 
       {result && result.rows.length > 0 && (
         <div className="card overflow-hidden">
-          <div className="border-b border-[var(--hairline)] bg-[var(--bg-raise)] px-3 py-2">
+          <div className="border-b border-[var(--hairline)] bg-[var(--bg-raise)] px-3 py-2 flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
             <h2 className={headingClass}>
               {result.truncated
                 ? `Showing first ${INSPECTION_LIMIT.toLocaleString("en-US")} of ${result.codePointCount.toLocaleString("en-US")} code points`
                 : `${result.codePointCount.toLocaleString("en-US")} code point${result.codePointCount === 1 ? "" : "s"}`}
             </h2>
+            <div className="flex flex-wrap items-center gap-3 text-xs text-[var(--fg-dim)]">
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full bg-[var(--amber)]" />
+                <span>Amber = invisible characters worth checking</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full bg-[var(--sky)]" />
+                <span>Blue = usually intentional (joiners, bidi)</span>
+              </span>
+            </div>
           </div>
 
           {result.truncated && (
             <p className="border-b border-[var(--hairline)] bg-tint-amber-5 px-4 py-2 text-sm text-[var(--amber)]">
-              Large input — inspection is limited to the first{" "}
+              Large input: inspection is limited to the first{" "}
               {INSPECTION_LIMIT.toLocaleString("en-US")} code points.
             </p>
           )}

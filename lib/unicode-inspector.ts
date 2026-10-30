@@ -22,9 +22,21 @@ const INVISIBLE: Record<number, InvisibleEntry> = {
   0x061c: { label: "ARABIC LETTER MARK", intentional: true },
   0x115f: { label: "HANGUL CHOSEONG FILLER", intentional: true },
   0x1160: { label: "HANGUL JUNGSEONG FILLER", intentional: true },
+  0x1680: { label: "OGHAM SPACE MARK" },
   0x17b4: { label: "KHMER VOWEL INHERENT AQ", intentional: true },
   0x17b5: { label: "KHMER VOWEL INHERENT AA", intentional: true },
   0x180e: { label: "MONGOLIAN VOWEL SEPARATOR" },
+  0x2000: { label: "EN QUAD" },
+  0x2001: { label: "EM QUAD" },
+  0x2002: { label: "EN SPACE" },
+  0x2003: { label: "EM SPACE" },
+  0x2004: { label: "THREE-PER-EM SPACE" },
+  0x2005: { label: "FOUR-PER-EM SPACE" },
+  0x2006: { label: "SIX-PER-EM SPACE" },
+  0x2007: { label: "FIGURE SPACE" },
+  0x2008: { label: "PUNCTUATION SPACE" },
+  0x2009: { label: "THIN SPACE" },
+  0x200a: { label: "HAIR SPACE" },
   0x200b: { label: "ZERO WIDTH SPACE" },
   0x200c: { label: "ZERO WIDTH NON-JOINER", intentional: true },
   0x200d: { label: "ZERO WIDTH JOINER", intentional: true },
@@ -37,6 +49,8 @@ const INVISIBLE: Record<number, InvisibleEntry> = {
   0x202c: { label: "POP DIRECTIONAL FORMATTING", intentional: true },
   0x202d: { label: "LEFT-TO-RIGHT OVERRIDE", intentional: true },
   0x202e: { label: "RIGHT-TO-LEFT OVERRIDE", intentional: true },
+  0x202f: { label: "NARROW NO-BREAK SPACE", intentional: true },
+  0x205f: { label: "MEDIUM MATHEMATICAL SPACE" },
   0x2060: { label: "WORD JOINER", intentional: true },
   0x2061: { label: "FUNCTION APPLICATION", intentional: true },
   0x2062: { label: "INVISIBLE TIMES", intentional: true },
@@ -178,6 +192,28 @@ export function codePointCount(input: string): number {
   return count;
 }
 
+function getInvisibleInfo(cp: number, char: string): { label: string | null; intentional: boolean } {
+  const inv = INVISIBLE[cp];
+  if (inv) {
+    return { label: inv.label, intentional: inv.intentional ?? false };
+  }
+  const isControl =
+    (cp <= 0x1f && cp !== 0x09 && cp !== 0x0a && cp !== 0x0d) ||
+    (cp >= 0x80 && cp <= 0x9f);
+  if (isControl) {
+    return { label: `CONTROL (U+${hex4(cp)})`, intentional: false };
+  }
+  if (char !== "") {
+    if (/\p{Zs}/u.test(char)) {
+      return { label: "SPACE SEPARATOR", intentional: false };
+    }
+    if (/\p{Cf}/u.test(char)) {
+      return { label: "FORMAT CHARACTER", intentional: true };
+    }
+  }
+  return { label: null, intentional: false };
+}
+
 export function inspectUnicode(input: string): InspectionResult {
   const utf16Count = input.length;
   const utf8Total = utf8ByteCount(input);
@@ -200,17 +236,18 @@ export function inspectUnicode(input: string): InspectionResult {
       const low = input.charCodeAt(utf16Offset + 1);
       if (low >= 0xdc00 && low <= 0xdfff) {
         const cp = 0x10000 + ((high - 0xd800) << 10) + (low - 0xdc00);
-        const inv = INVISIBLE[cp];
+        const char = String.fromCodePoint(cp);
+        const info = getInvisibleInfo(cp, char);
         rows.push({
           codePoint: cp,
           codePointStr: codePointStr(cp),
-          char: String.fromCodePoint(cp),
+          char,
           utf16Offset,
           utf16Length: 2,
           utf16Hex: [hex4(high), hex4(low)],
           utf8Hex: toUtf8Hex(cp),
-          invisibleLabel: inv?.label ?? null,
-          intentional: inv?.intentional ?? false,
+          invisibleLabel: info.label,
+          intentional: info.intentional,
           unpairedSurrogate: false,
         });
         utf16Offset += 2;
@@ -238,21 +275,18 @@ export function inspectUnicode(input: string): InspectionResult {
     }
 
     const cp = high;
-    const inv = INVISIBLE[cp];
-    const isControl =
-      (cp <= 0x1f && cp !== 0x09 && cp !== 0x0a && cp !== 0x0d) ||
-      (cp >= 0x80 && cp <= 0x9f);
-    const invisibleLabel = inv?.label ?? (isControl ? `CONTROL (U+${hex4(cp)})` : null);
+    const char = cp >= 0x20 ? String.fromCodePoint(cp) : "";
+    const info = getInvisibleInfo(cp, char);
     rows.push({
       codePoint: cp,
       codePointStr: codePointStr(cp),
-      char: cp >= 0x20 ? String.fromCodePoint(cp) : "",
+      char,
       utf16Offset,
       utf16Length: 1,
       utf16Hex: [hex4(cp)],
       utf8Hex: toUtf8Hex(cp),
-      invisibleLabel,
-      intentional: inv?.intentional ?? false,
+      invisibleLabel: info.label,
+      intentional: info.intentional,
       unpairedSurrogate: false,
     });
     utf16Offset++;
