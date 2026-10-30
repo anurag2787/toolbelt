@@ -8,49 +8,26 @@ import {
 } from "../unicode-inspector";
 
 describe("utf8ByteCount", () => {
-  it("counts 1 byte per ASCII character", () => {
+  it("counts UTF-8 bytes across ASCII, BMP, supplementary, and unpaired surrogates", () => {
     expect(utf8ByteCount("abc")).toBe(3);
-  });
-
-  it("counts 2 bytes for U+00A0 (no-break space)", () => {
     expect(utf8ByteCount("\u00a0")).toBe(2);
-  });
-
-  it("counts 3 bytes for U+2603 (snowman)", () => {
     expect(utf8ByteCount("\u2603")).toBe(3);
-  });
-
-  it("counts 4 bytes for a supplementary character (emoji)", () => {
     expect(utf8ByteCount("😀")).toBe(4);
-  });
-
-  it("counts an unpaired surrogate as 3 bytes (U+FFFD replacement)", () => {
-    const lone = String.fromCharCode(0xd800);
-    expect(utf8ByteCount(lone)).toBe(3);
+    expect(utf8ByteCount(String.fromCharCode(0xd800))).toBe(3);
   });
 });
 
 describe("codePointCount", () => {
-  it("returns 3 for 'abc'", () => {
+  it("accurately counts code points across surrogate pairs and mixed strings", () => {
     expect(codePointCount("abc")).toBe(3);
-  });
-
-  it("counts a surrogate pair as one code point", () => {
     expect(codePointCount("😀")).toBe(1);
-  });
-
-  it("counts an unpaired surrogate as one code point", () => {
-    const lone = String.fromCharCode(0xd800);
-    expect(codePointCount(lone)).toBe(1);
-  });
-
-  it("counts mixed BMP and supplementary characters", () => {
+    expect(codePointCount(String.fromCharCode(0xd800))).toBe(1);
     expect(codePointCount("A😀B")).toBe(3);
   });
 });
 
 describe("inspectUnicode", () => {
-  it("produces one row per ASCII character", () => {
+  it("produces one row per ASCII character with offsets and encodings", () => {
     const { rows } = inspectUnicode("AB");
     expect(rows).toHaveLength(2);
     expect(rows[0]).toMatchObject({
@@ -67,7 +44,7 @@ describe("inspectUnicode", () => {
     expect(rows[1]).toMatchObject({ codePoint: 0x42, utf16Offset: 1 });
   });
 
-  it("gives a supplementary character one row with two UTF-16 code units", () => {
+  it("handles supplementary characters (surrogate pairs)", () => {
     const { rows } = inspectUnicode("😀");
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({
@@ -95,76 +72,50 @@ describe("inspectUnicode", () => {
     expect(rows[1]).toMatchObject({ codePoint: 0x0a, invisibleLabel: "LF" });
   });
 
-  it("labels an unpaired high surrogate as unpairedSurrogate and emits an empty char", () => {
-    const lone = String.fromCharCode(0xd800);
-    const { rows } = inspectUnicode(lone);
-    expect(rows).toHaveLength(1);
-    expect(rows[0].unpairedSurrogate).toBe(true);
-    expect(rows[0].char).toBe("");
-    expect(rows[0].utf8Hex).toEqual(["EF", "BF", "BD"]);
+  it("labels unpaired surrogates and emits empty char with U+FFFD UTF-8 replacement", () => {
+    const high = inspectUnicode(String.fromCharCode(0xd800)).rows[0];
+    expect(high.unpairedSurrogate).toBe(true);
+    expect(high.char).toBe("");
+    expect(high.invisibleLabel).toBe("UNPAIRED HIGH SURROGATE");
+    expect(high.utf8Hex).toEqual(["EF", "BF", "BD"]);
+
+    const low = inspectUnicode(String.fromCharCode(0xdc00)).rows[0];
+    expect(low.unpairedSurrogate).toBe(true);
+    expect(low.invisibleLabel).toBe("UNPAIRED LOW SURROGATE");
   });
 
-  it("labels an unpaired low surrogate as unpairedSurrogate", () => {
-    const lone = String.fromCharCode(0xdc00);
-    const { rows } = inspectUnicode(lone);
-    expect(rows[0].unpairedSurrogate).toBe(true);
-    expect(rows[0].invisibleLabel).toBe("UNPAIRED LOW SURROGATE");
+  it("labels invisible, whitespace, and formatting characters", () => {
+    expect(inspectUnicode(" ").rows[0].invisibleLabel).toBe("SPACE");
+    expect(inspectUnicode("\t").rows[0].invisibleLabel).toBe("TAB");
+    expect(inspectUnicode("\u00a0").rows[0]).toMatchObject({
+      invisibleLabel: "NO-BREAK SPACE",
+      intentional: true,
+    });
+    expect(inspectUnicode("\u200b").rows[0]).toMatchObject({
+      invisibleLabel: "ZERO WIDTH SPACE",
+      intentional: false,
+    });
+    expect(inspectUnicode("\u200d").rows[0]).toMatchObject({
+      invisibleLabel: "ZERO WIDTH JOINER",
+      intentional: true,
+    });
+    expect(inspectUnicode("\ufeff").rows[0].invisibleLabel).toBe("BYTE ORDER MARK (BOM)");
   });
 
-  it("labels zero-width space (U+200B)", () => {
-    const { rows } = inspectUnicode("\u200b");
-    expect(rows[0].invisibleLabel).toBe("ZERO WIDTH SPACE");
-    expect(rows[0].intentional).toBe(false);
+  it("reports correct UTF-16 offsets and counts for mixed characters", () => {
+    const result = inspectUnicode("A😀B");
+    expect(result.utf16Count).toBe(4);
+    expect(result.codePointCount).toBe(3);
+    expect(result.rows[0].utf16Offset).toBe(0);
+    expect(result.rows[1].utf16Offset).toBe(1);
+    expect(result.rows[2].utf16Offset).toBe(3);
   });
 
-  it("labels ZWJ (U+200D) as intentional", () => {
-    const { rows } = inspectUnicode("\u200d");
-    expect(rows[0].invisibleLabel).toBe("ZERO WIDTH JOINER");
-    expect(rows[0].intentional).toBe(true);
-  });
-
-  it("labels BOM (U+FEFF)", () => {
-    const { rows } = inspectUnicode("\ufeff");
-    expect(rows[0].invisibleLabel).toBe("BYTE ORDER MARK (BOM)");
-  });
-
-  it("labels space and tab correctly", () => {
-    const { rows } = inspectUnicode(" \t");
-    expect(rows[0].invisibleLabel).toBe("SPACE");
-    expect(rows[1].invisibleLabel).toBe("TAB");
-  });
-
-  it("labels no-break space (U+00A0)", () => {
-    const { rows } = inspectUnicode("\u00a0");
-    expect(rows[0].invisibleLabel).toBe("NO-BREAK SPACE");
-    expect(rows[0].intentional).toBe(true);
-  });
-
-  it("reports correct UTF-16 offsets", () => {
-    const { rows } = inspectUnicode("A😀B");
-    expect(rows[0].utf16Offset).toBe(0);
-    expect(rows[1].utf16Offset).toBe(1);
-    expect(rows[2].utf16Offset).toBe(3);
-  });
-
-  it("reports utf16Count = input.length and correct codePointCount", () => {
-    const input = "A😀B";
-    const { utf16Count, codePointCount: cpCount } = inspectUnicode(input);
-    expect(utf16Count).toBe(input.length);
-    expect(cpCount).toBe(3);
-  });
-
-  it("truncates at INSPECTION_LIMIT and sets truncated=true", () => {
-    const big = "a".repeat(INSPECTION_LIMIT + 10);
-    const { rows, truncated } = inspectUnicode(big);
-    expect(truncated).toBe(true);
-    expect(rows).toHaveLength(INSPECTION_LIMIT);
-  });
-
-  it("does not truncate exactly at the limit", () => {
-    const exact = "a".repeat(INSPECTION_LIMIT);
-    const { truncated } = inspectUnicode(exact);
-    expect(truncated).toBe(false);
+  it("enforces INSPECTION_LIMIT truncation", () => {
+    expect(inspectUnicode("a".repeat(INSPECTION_LIMIT)).truncated).toBe(false);
+    const overLimit = inspectUnicode("a".repeat(INSPECTION_LIMIT + 10));
+    expect(overLimit.truncated).toBe(true);
+    expect(overLimit.rows).toHaveLength(INSPECTION_LIMIT);
   });
 
   it("handles an empty string", () => {
@@ -178,31 +129,23 @@ describe("inspectUnicode", () => {
 });
 
 describe("getNormalization", () => {
-  it("reports no change for plain ASCII", () => {
-    const result = getNormalization("hello");
-    expect(result.nfcChanged).toBe(false);
-    expect(result.nfdChanged).toBe(false);
-    expect(result.nfc).toBe("hello");
-    expect(result.nfd).toBe("hello");
+  it("reports no change for plain ASCII or already-composed text", () => {
+    expect(getNormalization("hello")).toMatchObject({
+      nfc: "hello",
+      nfd: "hello",
+      nfcChanged: false,
+      nfdChanged: false,
+    });
+    expect(getNormalization("\u00e9").nfcChanged).toBe(false);
   });
 
-  it("shows NFC composes e + combining acute into U+00E9", () => {
-    const input = "e\u0301";
-    const result = getNormalization(input);
-    expect(result.nfcChanged).toBe(true);
-    expect(result.nfc).toBe("\u00e9");
-  });
+  it("composes decomposed text in NFC and decomposes precomposed text in NFD", () => {
+    const composed = getNormalization("e\u0301");
+    expect(composed.nfcChanged).toBe(true);
+    expect(composed.nfc).toBe("\u00e9");
 
-  it("shows NFD decomposes U+00E9 into e + U+0301", () => {
-    const input = "\u00e9";
-    const result = getNormalization(input);
-    expect(result.nfdChanged).toBe(true);
-    expect(result.nfd).toBe("e\u0301");
-  });
-
-  it("reports no change for already-NFC text", () => {
-    const nfc = "\u00e9";
-    const result = getNormalization(nfc);
-    expect(result.nfcChanged).toBe(false);
+    const decomposed = getNormalization("\u00e9");
+    expect(decomposed.nfdChanged).toBe(true);
+    expect(decomposed.nfd).toBe("e\u0301");
   });
 });

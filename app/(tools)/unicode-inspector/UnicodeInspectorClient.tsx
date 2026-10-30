@@ -18,77 +18,6 @@ const labelClass = "mb-1.5 block text-sm font-medium text-[var(--fg)]";
 const headingClass =
   "font-mono text-[10.5px] tracking-[0.22em] uppercase text-[var(--fg-dim)]";
 
-const TEST_CASES: {
-  input: string;
-  label: string;
-  expectedRows: number;
-  highlight: string;
-}[] = [
-  {
-    label: "Plain ASCII — \"Hi\"",
-    input: "Hi",
-    expectedRows: 2,
-    highlight:
-      "2 rows: H → U+0048, 1 UTF-16 unit, 1 UTF-8 byte; i → U+0069, same.",
-  },
-  {
-    label: "Emoji — \"😀\"",
-    input: "😀",
-    expectedRows: 1,
-    highlight:
-      "1 row (not 2) — emoji is one code point U+1F600, 2 UTF-16 units (D83D DE00), 4 UTF-8 bytes (F0 9F 98 80).",
-  },
-  {
-    label: "Combining accent — \"e\\u0301\" (looks like é)",
-    input: "e\u0301",
-    expectedRows: 2,
-    highlight:
-      "2 rows: 'e' at U+0065, then combining acute U+0301. NFC preview composes them into é (U+00E9).",
-  },
-  {
-    label: "Precomposed é vs decomposed e+accent",
-    input: "\u00e9 vs e\u0301",
-    expectedRows: 6,
-    highlight:
-      "The first é is 1 row (U+00E9, NFC). NFD preview decomposes it. The second is 2 rows (e + U+0301, NFD). Looks identical but different code points.",
-  },
-  {
-    label: "CRLF line ending — \"A\\r\\nB\"",
-    input: "A\r\nB",
-    expectedRows: 4,
-    highlight:
-      "4 rows: A, CR (U+000D, labeled \"CR\"), LF (U+000A, labeled \"LF\"), B. CR and LF are always separate rows.",
-  },
-  {
-    label: "Invisible chars — \"Hello​World\" (contains U+200B)",
-    input: "Hello\u200bWorld",
-    expectedRows: 11,
-    highlight:
-      "11 rows. Row 6 (offset 5) shows ZERO WIDTH SPACE in amber — invisible but present between Hello and World.",
-  },
-  {
-    label: "No-break space — \"Hello\\u00A0World\"",
-    input: "Hello\u00a0World",
-    expectedRows: 11,
-    highlight:
-      "Row 6 shows NO-BREAK SPACE (U+00A0) in blue (intentional). 2 UTF-8 bytes: C2 A0.",
-  },
-  {
-    label: "BOM — \"\\uFEFFHello\"",
-    input: "\ufeffHello",
-    expectedRows: 6,
-    highlight:
-      "Row 1 (offset 0) shows BYTE ORDER MARK (BOM) at U+FEFF. 3 UTF-8 bytes: EF BB BF.",
-  },
-  {
-    label: "ZWJ emoji sequence — \"🏳️‍🌈\"",
-    input: "🏳️‍🌈",
-    expectedRows: 5,
-    highlight:
-      "5 rows: 🏳 (U+1F3F3, 2 units), ️ variation selector (U+FE0F), ZWJ (U+200D, intentional), 🌈 (U+1F308, 2 units). Browser renders as one flag.",
-  },
-];
-
 function CharCell({ row }: { row: CodePointRow }) {
   if (row.unpairedSurrogate) {
     return (
@@ -195,55 +124,6 @@ function NormalizationPanel({ input }: { input: string }) {
   );
 }
 
-function TestGuide({
-  onLoad,
-}: {
-  onLoad: (text: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  return (
-    <div className="card overflow-hidden">
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-full flex items-center justify-between px-4 py-3 sm:px-5 text-left"
-        aria-expanded={open}
-      >
-        <span className={headingClass}>How to test — inputs &amp; expected outputs</span>
-        <span className="text-[var(--fg-dim)] text-lg leading-none select-none">
-          {open ? "−" : "+"}
-        </span>
-      </button>
-
-      {open && (
-        <div className="border-t border-[var(--hairline)] divide-y divide-[var(--hairline)]">
-          {TEST_CASES.map((tc) => (
-            <div key={tc.label} className="px-4 py-3 sm:px-5 space-y-1.5">
-              <div className="flex items-start justify-between gap-3">
-                <p className="text-sm font-medium text-[var(--fg)]">{tc.label}</p>
-                <button
-                  type="button"
-                  onClick={() => onLoad(tc.input)}
-                  className="btn py-0.5 px-2 text-[11px] shrink-0"
-                >
-                  Load
-                </button>
-              </div>
-              <p className="font-mono text-[11px] text-[var(--fg-muted)] bg-[var(--bg-raise)] rounded-lg px-2.5 py-1.5 border border-[var(--hairline)]">
-                Expected: {tc.highlight}
-              </p>
-              <p className="text-[11px] text-[var(--fg-dim)]">
-                Rows in table: <span className="font-mono text-[var(--fuchsia)]">{tc.expectedRows}</span>
-              </p>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 export function UnicodeInspectorClient() {
   const [raw, setRaw] = useState("");
   const [debouncedInput, setDebouncedInput] = useState("");
@@ -265,7 +145,6 @@ export function UnicodeInspectorClient() {
 
   return (
     <section className="mx-auto max-w-7xl w-full px-4 sm:px-6 pb-10 space-y-4">
-      {/* Input card */}
       <div className="card p-4 sm:p-5 space-y-4">
         <div>
           <label htmlFor="unicode-input" className={labelClass}>
@@ -312,7 +191,6 @@ export function UnicodeInspectorClient() {
         </div>
       </div>
 
-      {/* Stats bar */}
       {result && (
         <div className="card px-4 py-3 sm:px-5 flex flex-wrap gap-x-6 gap-y-2">
           <StatPill label="Code points" value={result.codePointCount} />
@@ -321,7 +199,6 @@ export function UnicodeInspectorClient() {
         </div>
       )}
 
-      {/* Unpaired surrogate warning */}
       {hasUnpaired && (
         <p
           role="alert"
@@ -333,7 +210,6 @@ export function UnicodeInspectorClient() {
         </p>
       )}
 
-      {/* Inspection table */}
       {result && result.rows.length > 0 && (
         <div className="card overflow-hidden">
           <div className="border-b border-[var(--hairline)] bg-[var(--bg-raise)] px-3 py-2">
@@ -394,18 +270,13 @@ export function UnicodeInspectorClient() {
         </div>
       )}
 
-      {/* Empty state */}
       {result && result.rows.length === 0 && !tooLong && (
         <div className="card px-4 py-8 text-center text-[var(--fg-dim)] text-sm">
           No characters to inspect. Type or paste text above.
         </div>
       )}
 
-      {/* Normalization panel */}
       {result && <NormalizationPanel input={input} />}
-
-      {/* Test guide — collapsible */}
-      <TestGuide onLoad={(text) => setRaw(text)} />
     </section>
   );
 }
